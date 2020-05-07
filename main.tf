@@ -70,3 +70,45 @@ output "website_hostname_dev" {
   value       = "${azurerm_app_service.spacegame_dev.default_site_hostname}"
   description = "The hostname of the website in the dev environment"
 }
+
+resource "azurerm_app_service" "spacegame_test" {
+  name                = "${var.app_service_name_prefix}-test-${random_integer.app_service_name_suffix.result}"
+  location            = "${azurerm_resource_group.spacegame.location}"
+  resource_group_name = "${azurerm_resource_group.spacegame.name}"
+  app_service_plan_id = "${azurerm_app_service_plan.spacegame.id}"
+
+  site_config {
+    linux_fx_version = "DOTNETCORE|3.1"
+    app_command_line = "dotnet Tailspin.SpaceGame.Web.dll"
+  }
+}
+
+output "appservice_name_test" {
+  value       = "${azurerm_app_service.spacegame_test.name}"
+  description = "The App Service name for the test environment"
+}
+output "website_hostname_test" {
+  value       = "${azurerm_app_service.spacegame_test.default_site_hostname}"
+  description = "The hostname of the website in the test environment"
+}
+
+resource "azurerm_app_service" "spacegame_staging" {
+  name                = "${var.app_service_name_prefix}-staging-${random_integer.app_service_name_suffix.result}"
+  location            = "${azurerm_resource_group.spacegame.location}"
+  resource_group_name = "${azurerm_resource_group.spacegame.name}"
+  app_service_plan_id = "${azurerm_app_service_plan.spacegame.id}"
+
+  site_config {
+    linux_fx_version = "DOTNETCORE|3.1"
+    app_command_line = "dotnet Tailspin.SpaceGame.Web.dll"
+  }
+}
+
+output "appservice_name_staging" {
+  value       = "${azurerm_app_service.spacegame_staging.name}"
+  description = "The App Service name for the staging environment"
+}
+output "website_hostname_staging" {
+  value       = "${azurerm_app_service.spacegame_staging.default_site_hostname}"
+  description = "The hostname of the website in the staging environment"
+}

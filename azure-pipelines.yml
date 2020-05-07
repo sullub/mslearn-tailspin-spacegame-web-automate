@@ -124,3 +124,124 @@ stages:
               azureSubscription: 'Resource Manager - Tailspin - Space Game'
               appName: '$(WebAppNameDev)'
               package: '$(Pipeline.Workspace)/drop/$(buildConfiguration)/*.zip'
+
+- stage: 'Test'
+  displayName: 'Deploy to the test environment'
+  dependsOn: Dev
+  #condition: eq(variables['Build.Reason'], 'Schedule')
+  jobs:
+  - job: Provision
+    displayName: 'Provision Azure App Service'
+    pool:
+      vmImage: 'ubuntu-16.04'
+    variables:
+    - group: Release
+    steps:
+    - script: |
+        # Exit when any command returns a failure status.
+        set -e
+
+        # Write terraform.tfvars.
+        echo 'resource_group_location = "'$(ResourceGroupLocation)'"' | tee terraform.tfvars
+        # Write backend.tfvars.
+        echo 'resource_group_name = "tf-storage-rg"' | tee backend.tfvars
+        echo 'storage_account_name = "'$(StorageAccountName)'"' | tee -a backend.tfvars
+        echo 'container_name = "tfstate"' | tee -a backend.tfvars
+        echo 'key = "terraform-test.tfstate"' | tee -a backend.tfvars
+
+        # Initialize Terraform.
+        terraform init -input=false -backend-config="backend.tfvars"
+        # Apply the Terraform plan.
+        terraform apply -input=false -auto-approve
+
+        # Get the App Service name for the test environment.
+        WebAppNameTest=$(terraform output appservice_name_test)
+
+        # Write the WebAppNameTest variable to the pipeline.
+        echo "##vso[task.setvariable variable=WebAppNameTest;isOutput=true]$WebAppNameTest"
+      name: 'RunTerraform'
+      displayName: 'Run Terraform'
+      env:
+        ARM_CLIENT_ID: $(ARM_CLIENT_ID)
+        ARM_CLIENT_SECRET: $(ARM_CLIENT_SECRET)
+        ARM_TENANT_ID: $(ARM_TENANT_ID)
+        ARM_SUBSCRIPTION_ID: $(ARM_SUBSCRIPTION_ID)  
+  - deployment: Deploy
+    dependsOn: Provision
+    variables:
+      WebAppNameTest: $[ dependencies.Provision.outputs['RunTerraform.WebAppNameTest'] ]
+    pool:
+      vmImage: 'ubuntu-16.04'
+    environment: test
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - download: current
+            artifact: drop
+          - task: AzureWebApp@1
+            displayName: 'Azure App Service Deploy: website'
+            inputs:
+              azureSubscription: 'Resource Manager - Tailspin - Space Game'
+              appName: '$(WebAppNameTest)'
+              package: '$(Pipeline.Workspace)/drop/$(buildConfiguration)/*.zip'
+
+- stage: 'Staging'
+  displayName: 'Deploy to the staging environment'
+  dependsOn: Test
+  jobs:
+  - job: Provision
+    displayName: 'Provision Azure App Service'
+    pool:
+      vmImage: 'ubuntu-16.04'
+    variables:
+    - group: Release
+    steps:
+    - script: |
+        # Exit when any command returns a failure status.
+        set -e
+
+        # Write terraform.tfvars.
+        echo 'resource_group_location = "'$(ResourceGroupLocation)'"' | tee terraform.tfvars
+        # Write backend.tfvars.
+        echo 'resource_group_name = "tf-storage-rg"' | tee backend.tfvars
+        echo 'storage_account_name = "'$(StorageAccountName)'"' | tee -a backend.tfvars
+        echo 'container_name = "tfstate"' | tee -a backend.tfvars
+        echo 'key = "terraform-staging.tfstate"' | tee -a backend.tfvars
+
+        # Initialize Terraform.
+        terraform init -input=false -backend-config="backend.tfvars"
+        # Apply the Terraform plan.
+        terraform apply -input=false -auto-approve
+
+        # Get the App Service name for the staging environment.
+        WebAppNameStaging=$(terraform output appservice_name_staging)
+
+        # Write the WebAppNameStaging variable to the pipeline.
+        echo "##vso[task.setvariable variable=WebAppNameStaging;isOutput=true]$WebAppNameStaging"
+      name: 'RunTerraform'
+      displayName: 'Run Terraform'
+      env:
+        ARM_CLIENT_ID: $(ARM_CLIENT_ID)
+        ARM_CLIENT_SECRET: $(ARM_CLIENT_SECRET)
+        ARM_TENANT_ID: $(ARM_TENANT_ID)
+        ARM_SUBSCRIPTION_ID: $(ARM_SUBSCRIPTION_ID)  
+  - deployment: Deploy
+    dependsOn: Provision
+    variables:
+      WebAppNameStaging: $[ dependencies.Provision.outputs['RunTerraform.WebAppNameStaging'] ]
+    pool:
+      vmImage: 'ubuntu-16.04'
+    environment: staging
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - download: current
+            artifact: drop
+          - task: AzureWebApp@1
+            displayName: 'Azure App Service Deploy: website'
+            inputs:
+              azureSubscription: 'Resource Manager - Tailspin - Space Game'
+              appName: '$(WebAppNameStaging)'
+              package: '$(Pipeline.Workspace)/drop/$(buildConfiguration)/*.zip'
