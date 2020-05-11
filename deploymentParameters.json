@@ -22,7 +22,7 @@
         "firstRun": {
             "reference": {
                 "keyVault": {
-                    "id": "/subscriptions/02b548b3-80d0-4823-a60d-ef483c292f48/resourceGroups/tailspin-spacegame-web-rg/providers/Microsoft.KeyVault/vaults/tailspin-vault-1744"
+                    "id": "/subscriptions/02b548b3-80d0-4823-a60d-ef483c292f48/resourceGroups/tailspin-spacegame-web-rg/providers/Microsoft.KeyVault/vaults/tailspin-vault-17448"
                 },
                 "secretName": "firstRun"
             }
