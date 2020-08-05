@@ -3,7 +3,8 @@ version = "~> 1.44"
 }
 terraform {
   required_version = "> 0.12.0"
-
+   backend "azurerm" {
+  }
 }
 
 variable "resource_group_name" {
