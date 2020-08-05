@@ -91,7 +91,7 @@ stages:
         # Initialize Terraform.
         terraform init -input=false -backend-config="backend.tfvars"
         echo "*********** Create or select workspace"
-        terraform workspace select "$(Environment.Name)" || terraform workspace new "$(Environment.Name)"
+        terraform workspace select "$(Env1)" || terraform workspace new "$(Env1)"
         #Run terraform plan
         terraform plan -out main.tfplan
         # Apply the Terraform plan.
@@ -157,7 +157,7 @@ stages:
         terraform init -input=false -backend-config="backend.tfvars"
         echo "*********** Create or select workspace"
         echo "*********** Create or select workspace"
-        terraform workspace select "$(Environment.Name)" || terraform workspace new "$(Environment.Name)"
+        terraform workspace select "$(Env2)" || terraform workspace new "$(Env2)"
         #Run terraform plan
         terraform plan -out main.tfplan
         # Apply the Terraform plan.
@@ -226,7 +226,7 @@ stages:
         terraform init -input=false -backend-config="backend.tfvars"
         echo "*********** Create or select workspace"
         echo "*********** Create or select workspace"
-        terraform workspace select "$(Environment.Name)" || terraform workspace new "$(Environment.Name)"
+        terraform workspace select "$(Env3)" || terraform workspace new "$(Env3)"
         #Run terraform plan
         terraform plan -out main.tfplan
         # Apply the Terraform plan.
