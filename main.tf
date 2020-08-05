@@ -4,8 +4,6 @@ version = "~> 1.44"
 terraform {
   required_version = "> 0.12.0"
 
-  backend "azurerm" {
-  }
 }
 
 variable "resource_group_name" {
@@ -13,8 +11,9 @@ variable "resource_group_name" {
   description = "The name of the resource group"
 }
 
-variable "resource_group_location" {
-  description = "The location of the resource group"
+variable "location" {
+  type    = string
+  default = "uksouth"
 }
 
 variable "app_service_plan_name" {
@@ -32,15 +31,25 @@ resource "random_integer" "app_service_name_suffix" {
   max = 9999
 }
 
+locals {
+  full_rg_name = "ask-${terraform.workspace}-${var.resource_group_name}"
+  full_app_service_name = "${terraform.workspace}-${var.app_service_plan_name}"
+}
+
+
 resource "azurerm_resource_group" "spacegame" {
-  name     = "${var.resource_group_name}"
-  location = "${var.resource_group_location}"
+  name     = local.full_rg_name
+  location = var.location
+
+  tags = {
+    environment = terraform.workspace
+  }
 }
 
 resource "azurerm_app_service_plan" "spacegame" {
-  name                = "${var.app_service_plan_name}"
-  location            = "${azurerm_resource_group.spacegame.location}"
-  resource_group_name = "${azurerm_resource_group.spacegame.name}"
+  name                = local.full_app_service_name
+  location            = var.location
+  resource_group_name = azurerm_resource_group.spacegame.name
   kind                = "Linux"
   reserved            = true
 
@@ -50,11 +59,11 @@ resource "azurerm_app_service_plan" "spacegame" {
   }
 }
 
-resource "azurerm_app_service" "spacegame_dev" {
-  name                = "${var.app_service_name_prefix}-dev-${random_integer.app_service_name_suffix.result}"
-  location            = "${azurerm_resource_group.spacegame.location}"
-  resource_group_name = "${azurerm_resource_group.spacegame.name}"
-  app_service_plan_id = "${azurerm_app_service_plan.spacegame.id}"
+resource "azurerm_app_service" "spacegame" {
+  name                = "${local.full_app_service_name}-${random_integer.app_service_name_suffix.result}"
+  location            = var.location
+  resource_group_name = azurerm_resource_group.spacegame.name
+  app_service_plan_id = azurerm_app_service_plan.spacegame.id
 
   site_config {
     linux_fx_version = "DOTNETCORE|3.1"
@@ -62,53 +71,13 @@ resource "azurerm_app_service" "spacegame_dev" {
   }
 }
 
-output "appservice_name_dev" {
-  value       = "${azurerm_app_service.spacegame_dev.name}"
-  description = "The App Service name for the dev environment"
+output "appservice_name" {
+  value       = "${azurerm_app_service.spacegame.name}"
+  description = "The App Service name for the current environment"
 }
-output "website_hostname_dev" {
-  value       = "${azurerm_app_service.spacegame_dev.default_site_hostname}"
-  description = "The hostname of the website in the dev environment"
-}
-
-resource "azurerm_app_service" "spacegame_test" {
-  name                = "${var.app_service_name_prefix}-test-${random_integer.app_service_name_suffix.result}"
-  location            = "${azurerm_resource_group.spacegame.location}"
-  resource_group_name = "${azurerm_resource_group.spacegame.name}"
-  app_service_plan_id = "${azurerm_app_service_plan.spacegame.id}"
-
-  site_config {
-    linux_fx_version = "DOTNETCORE|3.1"
-    app_command_line = "dotnet Tailspin.SpaceGame.Web.dll"
-  }
+output "website_hostname" {
+  value       = "${azurerm_app_service.spacegame.default_site_hostname}"
+  description = "The hostname of the website in the current environment"
 }
 
-output "appservice_name_test" {
-  value       = "${azurerm_app_service.spacegame_test.name}"
-  description = "The App Service name for the test environment"
-}
-output "website_hostname_test" {
-  value       = "${azurerm_app_service.spacegame_test.default_site_hostname}"
-  description = "The hostname of the website in the test environment"
-}
 
-resource "azurerm_app_service" "spacegame_staging" {
-  name                = "${var.app_service_name_prefix}-staging-${random_integer.app_service_name_suffix.result}"
-  location            = "${azurerm_resource_group.spacegame.location}"
-  resource_group_name = "${azurerm_resource_group.spacegame.name}"
-  app_service_plan_id = "${azurerm_app_service_plan.spacegame.id}"
-
-  site_config {
-    linux_fx_version = "DOTNETCORE|3.1"
-    app_command_line = "dotnet Tailspin.SpaceGame.Web.dll"
-  }
-}
-
-output "appservice_name_staging" {
-  value       = "${azurerm_app_service.spacegame_staging.name}"
-  description = "The App Service name for the staging environment"
-}
-output "website_hostname_staging" {
-  value       = "${azurerm_app_service.spacegame_staging.default_site_hostname}"
-  description = "The hostname of the website in the staging environment"
-}

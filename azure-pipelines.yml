@@ -83,18 +83,28 @@ stages:
         # Write terraform.tfvars.
         echo 'resource_group_location = "'$(ResourceGroupLocation)'"' | tee terraform.tfvars
         # Write backend.tfvars.
-        echo 'resource_group_name = "tf-storage-rg"' | tee backend.tfvars
+        echo 'resource_group_name = "TFStateFile-rg"' | tee backend.tfvars
         echo 'storage_account_name = "'$(StorageAccountName)'"' | tee -a backend.tfvars
-        echo 'container_name = "tfstate"' | tee -a backend.tfvars
-        echo 'key = "terraform-dev.tfstate"' | tee -a backend.tfvars
+        echo 'container_name = "tfstatefiles"' | tee -a backend.tfvars
+        echo 'key = "terraform.tfstate"' | tee -a backend.tfvars
 
         # Initialize Terraform.
         terraform init -input=false -backend-config="backend.tfvars"
+        echo "*********** Create or select workspace"
+        if [ $(terraform workspace list | grep -c "$1") -eq 0 ] ; then
+        echo "Create new workspace $1"
+        terraform workspace new "$1" -no-color
+        else
+        echo "Switch to workspace $1"
+        terraform workspace select "$1" -no-color
+        fi
+        #Run terraform plan
+        terraform plan -out main.tfplan
         # Apply the Terraform plan.
-        terraform apply -input=false -auto-approve
+        terraform apply main.tfplan
 
         # Get the App Service name for the dev environment.
-        WebAppNameDev=$(terraform output appservice_name_dev)
+        WebAppNameDev=$(terraform output appservice_name)
 
         # Write the WebAppNameDev variable to the pipeline.
         echo "##vso[task.setvariable variable=WebAppNameDev;isOutput=true]$WebAppNameDev"
@@ -144,18 +154,28 @@ stages:
         # Write terraform.tfvars.
         echo 'resource_group_location = "'$(ResourceGroupLocation)'"' | tee terraform.tfvars
         # Write backend.tfvars.
-        echo 'resource_group_name = "tf-storage-rg"' | tee backend.tfvars
+        echo 'resource_group_name = "TFStateFile-rg"' | tee backend.tfvars
         echo 'storage_account_name = "'$(StorageAccountName)'"' | tee -a backend.tfvars
-        echo 'container_name = "tfstate"' | tee -a backend.tfvars
-        echo 'key = "terraform-test.tfstate"' | tee -a backend.tfvars
+        echo 'container_name = "tfstatefiles"' | tee -a backend.tfvars
+        echo 'key = "terraform.tfstate"' | tee -a backend.tfvars
 
         # Initialize Terraform.
         terraform init -input=false -backend-config="backend.tfvars"
+        echo "*********** Create or select workspace"
+        if [ $(terraform workspace list | grep -c "$1") -eq 0 ] ; then
+        echo "Create new workspace $1"
+        terraform workspace new "$1" -no-color
+        else
+        echo "Switch to workspace $1"
+        terraform workspace select "$1" -no-color
+        fi
+        #Run terraform plan
+        terraform plan -out main.tfplan
         # Apply the Terraform plan.
-        terraform apply -input=false -auto-approve
+        terraform apply main.tfplan
 
         # Get the App Service name for the test environment.
-        WebAppNameTest=$(terraform output appservice_name_test)
+        WebAppNameTest=$(terraform output appservice_name)
 
         # Write the WebAppNameTest variable to the pipeline.
         echo "##vso[task.setvariable variable=WebAppNameTest;isOutput=true]$WebAppNameTest"
@@ -204,18 +224,28 @@ stages:
         # Write terraform.tfvars.
         echo 'resource_group_location = "'$(ResourceGroupLocation)'"' | tee terraform.tfvars
         # Write backend.tfvars.
-        echo 'resource_group_name = "tf-storage-rg"' | tee backend.tfvars
+        echo 'resource_group_name = "TFStateFile-rg"' | tee backend.tfvars
         echo 'storage_account_name = "'$(StorageAccountName)'"' | tee -a backend.tfvars
-        echo 'container_name = "tfstate"' | tee -a backend.tfvars
-        echo 'key = "terraform-staging.tfstate"' | tee -a backend.tfvars
+        echo 'container_name = "tfstatefiles"' | tee -a backend.tfvars
+        echo 'key = "terraform.tfstate"' | tee -a backend.tfvars
 
         # Initialize Terraform.
         terraform init -input=false -backend-config="backend.tfvars"
+        echo "*********** Create or select workspace"
+        if [ $(terraform workspace list | grep -c "$1") -eq 0 ] ; then
+        echo "Create new workspace $1"
+        terraform workspace new "$1" -no-color
+        else
+        echo "Switch to workspace $1"
+        terraform workspace select "$1" -no-color
+        fi
+        #Run terraform plan
+        terraform plan -out main.tfplan
         # Apply the Terraform plan.
-        terraform apply -input=false -auto-approve
+        terraform apply main.tfplan
 
         # Get the App Service name for the staging environment.
-        WebAppNameStaging=$(terraform output appservice_name_staging)
+        WebAppNameStaging=$(terraform output appservice_name)
 
         # Write the WebAppNameStaging variable to the pipeline.
         echo "##vso[task.setvariable variable=WebAppNameStaging;isOutput=true]$WebAppNameStaging"
