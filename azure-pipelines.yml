@@ -91,7 +91,7 @@ stages:
         # Initialize Terraform.
         terraform init -input=false -backend-config="backend.tfvars"
         echo "*********** Create or select workspace"
-        terraform workspace select "$(Release.EnvironmentName)" || terraform workspace new "$(Release.EnvironmentName)"
+        terraform workspace select "$(environment.name)" || terraform workspace new "$(environment.name)"
         #Run terraform plan
         terraform plan -out main.tfplan
         # Apply the Terraform plan.
